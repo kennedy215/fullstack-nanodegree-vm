@@ -4,12 +4,16 @@ DBNAME = "news"
 
 
 #passing queries in variables as list
-query_one = ["""SELECT title,views FROM article_view LIMIT 3 """]
-query_two = ["""SELECT name, sum(articles_by_view.views) AS views
-            FROM articles_by_author, articles_by_view
-            WHERE articles_by_author.title = articles_by_view.title
-            GROUP BY name ORDER BY views """]
-query_three = ["""   """]
+query_one = [""" SELECT title,views FROM article_view LIMIT 3 """]
+
+query_two = [""" SELECT authors.name,sum(article_view.views) as views from
+article_view,authors WHERE authors.id = article_view.author
+GROUP BY authors.name ORDER BY views DESC """]
+
+query_three = [""" SELECT * FROM (select date(time),round(100.0 * sum(case log.status
+WHEN '200 OK'  THEN 0 else 1 end)/count(log.status),3) AS error FROM log group
+by date(time) ORDER BY error DESC) AS subq WHERE error > 1; """]
+
 
 #coverting queries into strings
 query_1 = 'query_one'.join(query_one)
@@ -26,7 +30,7 @@ results
 
 print ("\n 1. What are the most popular three articles of all time? \n")
 for result in results:
-        print (str(result[0]) + " -> " + str(result[1]) + " views")
+        print ("* " + str(result[0]) + " -> " + str(result[1]) + " views")
 
 # query 2
 db = psycopg2.connect(database = DBNAME)
@@ -43,14 +47,14 @@ for result in results:
 # query 3
 db = psycopg2.connect(database = DBNAME)
 conn = db.cursor()
-conn.execute(query_2)
+conn.execute(query_3)
 results = conn.fetchall()
 conn.close()
 results
 
 print ('\n 3. On which days did more than 1% of requests lead to errors? \n')
 for result in results:
-        print ("* " + str(result[0]) + " -> " + str(result[1]))
+        print ("* " + str(result[0]))
 
 if __name__ == "__main__":
     print("This program is being run by it's self")
